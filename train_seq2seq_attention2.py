@@ -182,12 +182,12 @@ def eval(model, valid_iterator, loss_fct):
 
 def do_train():
     init_seed()
-    num_epoch = 10
+    num_epoch = 20
 
     results = []
-    model_dir = "./checkpoint/seq2seq_attention2/dot_attn"
+    # model_dir = "./checkpoint/seq2seq_attention2/dot_attn"
     # model_dir = "./checkpoint/seq2seq_attention2/concat_attn"
-    # model_dir = "./checkpoint/seq2seq_attention2/general_attn"
+    model_dir = "./checkpoint/seq2seq_attention2/general_attn"
     model, optimizer, loss_fct, train_iterator, valid_iterator, test_iterator, SRC, TGT = prepare_data(type="train")
     for epoch in range(num_epoch):
         train_loss = train(model, optimizer, train_iterator, loss_fct)
@@ -207,9 +207,9 @@ def do_train():
 
 def do_predict():
     model, optimizer, loss_fct, train_iterator, valid_iterator, test_iterator, SRC, TGT = prepare_data(type="test")
-    # model_dir  = "./checkpoint/seq2seq_attention2/dot_attn"
+    model_dir  = "./checkpoint/seq2seq_attention2/dot_attn"
     # model_dir = "./checkpoint/seq2seq_attention2/concat_attn"
-    model_dir = "./checkpoint/seq2seq_attention2/general_attn"
+    # model_dir = "./checkpoint/seq2seq_attention2/general_attn"
     model_path = os.path.join(model_dir, "model_9.pt")
     state_dict = torch.load(model_path)
     model.load_state_dict(state_dict)
@@ -240,5 +240,5 @@ def do_predict():
 
 
 if __name__ == "__main__":
-    # do_train()
-    do_predict()
+    do_train()
+    # do_predict()
