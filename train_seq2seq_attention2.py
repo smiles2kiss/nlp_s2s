@@ -101,13 +101,11 @@ def prepare_data(type="train"):
     else:
         # model = Greedy_Search(enc_embeddings=enc_embeddings, dec_embeddings=dec_embeddings,
         #                       input_size=input_size,         output_size=output_size,
-        #                       enc_emb_size=enc_emb_size,     dec_emb_size=dec_emb_size,
         #                       enc_hid_size=enc_hid_size,     dec_hid_size=dec_hid_size,
         #                       enc_n_layer=enc_n_layer,       dec_n_layer=dec_n_layer,
         #                       enc_dropout=enc_dropout,       dec_dropout=dec_dropout)
         model = Beam_Search(enc_embeddings=enc_embeddings, dec_embeddings=dec_embeddings,
                             input_size=input_size,         output_size=output_size,
-                            enc_emb_size=enc_emb_size,     dec_emb_size=dec_emb_size,
                             enc_hid_size=enc_hid_size,     dec_hid_size=dec_hid_size,
                             enc_n_layer=enc_n_layer,       dec_n_layer=dec_n_layer,
                             enc_dropout=enc_dropout,       dec_dropout=dec_dropout)
@@ -186,22 +184,32 @@ def do_train():
     init_seed()
     num_epoch = 10
 
+    results = []
+    model_dir = "./checkpoint/seq2seq_attention2/dot_attn"
+    # model_dir = "./checkpoint/seq2seq_attention2/concat_attn"
+    # model_dir = "./checkpoint/seq2seq_attention2/general_attn"
     model, optimizer, loss_fct, train_iterator, valid_iterator, test_iterator, SRC, TGT = prepare_data(type="train")
     for epoch in range(num_epoch):
         train_loss = train(model, optimizer, train_iterator, loss_fct)
         valid_loss = eval(model, valid_iterator, loss_fct)
+        results.append({"epoch": epoch, "train_loss": train_loss, "valid_loss": valid_loss})
 
-        model_dir = "./checkpoint/seq2seq_attention2"
         os.makedirs(model_dir, exist_ok=True)
         model_path = os.path.join(model_dir, f"model_{epoch}.pt")
         torch.save(model.state_dict(), model_path)
         print("[TIME] --- time: {} --- [TIME]".format(time.ctime(time.time())))
         print("epoch: {}, train_loss: {}, valid_loss: {}".format(epoch, train_loss, valid_loss))
 
+    result_path = os.path.join(model_dir, "result.json")
+    with open(result_path, "w", encoding="utf-8") as writer:
+        json.dump(results, writer, ensure_ascii=False, indent=4)
+
 
 def do_predict():
     model, optimizer, loss_fct, train_iterator, valid_iterator, test_iterator, SRC, TGT = prepare_data(type="test")
-    model_dir  = "./checkpoint/seq2seq_attention2"
+    # model_dir  = "./checkpoint/seq2seq_attention2/dot_attn"
+    # model_dir = "./checkpoint/seq2seq_attention2/concat_attn"
+    model_dir = "./checkpoint/seq2seq_attention2/general_attn"
     model_path = os.path.join(model_dir, "model_9.pt")
     state_dict = torch.load(model_path)
     model.load_state_dict(state_dict)
@@ -232,5 +240,5 @@ def do_predict():
 
 
 if __name__ == "__main__":
-    do_train()
-    # do_predict()
+    # do_train()
+    do_predict()

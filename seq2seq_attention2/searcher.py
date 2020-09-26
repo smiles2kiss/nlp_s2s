@@ -2,6 +2,7 @@ import os
 import sys
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 cur_path = os.path.abspath(__file__)
 cur_dir  = os.path.dirname(cur_path)
@@ -24,13 +25,12 @@ class Greedy_Search(nn.Module):
     def __init__(self,
                  enc_embeddings, dec_embeddings,
                  input_size,   output_size,
-                 enc_emb_size, dec_emb_size,
                  enc_hid_size, dec_hid_size,
                  enc_n_layer,  dec_n_layer,
                  enc_dropout,  dec_dropout):
         super(Greedy_Search, self).__init__()
-        self.encoder = Encoder(enc_embeddings, input_size,  enc_emb_size, enc_hid_size, enc_n_layer, enc_dropout)
-        self.decoder = Decoder(dec_embeddings, output_size, dec_emb_size, dec_hid_size, dec_n_layer, dec_dropout)
+        self.encoder = Encoder(enc_embeddings, input_size,  enc_hid_size, enc_n_layer, enc_dropout)
+        self.decoder = Decoder(dec_embeddings, output_size, dec_hid_size, dec_n_layer, dec_dropout)
         self.sos_idx = sos_idx
         self.dec_n_layer = dec_n_layer
 
@@ -82,15 +82,15 @@ class Beam_Search(nn.Module):
     def __init__(self,
                  enc_embeddings, dec_embeddings,
                  input_size,   output_size,
-                 enc_emb_size, dec_emb_size,
                  enc_hid_size, dec_hid_size,
                  enc_n_layer,  dec_n_layer,
                  enc_dropout,  dec_dropout):
         super(Beam_Search, self).__init__()
-        self.encoder = Encoder(enc_embeddings, input_size,  enc_emb_size, enc_hid_size, enc_n_layer, enc_dropout)
-        self.decoder = Decoder(dec_embeddings, output_size, dec_emb_size, dec_hid_size, dec_n_layer, dec_dropout)
+        self.encoder = Encoder(enc_embeddings, input_size,  enc_hid_size, enc_n_layer, enc_dropout)
+        self.decoder = Decoder(dec_embeddings, output_size, dec_hid_size, dec_n_layer, dec_dropout)
         self.sos_idx = sos_idx
         self.dec_n_layer = dec_n_layer
+
 
     def forward(self, input_ids, input_len):
         batch_size = input_ids.size(1)
@@ -104,19 +104,19 @@ class Beam_Search(nn.Module):
         all_tokens = torch.LongTensor(batch_size, max_len).fill_(eos_idx).cuda()
         all_scores = torch.FloatTensor(batch_size, max_len).fill_(0).cuda()
 
-        # encoder_outputs: [seq_len, batch_size, hidden_size]
-        # encoder_hidden:  [batch_size, hidden_size]
-        # decoder_hidden:  [batch_size, hidden_size]
+        # rnn_output:      [seq_len, batch_size, hidden_size]
+        # decoder_hidden:  [n_layer, batch_size, hidden_size]
+        # encoder_hidden:  [n_layer, batch_size, hidden_size]
         encoder_outputs, encoder_hidden = self.encoder(input_ids, input_len)
         decoder_hidden = encoder_hidden
 
         for batch_idx in range(batch_size):
             # _decoder_input: [1]
             # _encoder_outputs: [seq_len, 1, hidden_size]
-            # _decoder_hidden:  [         1, hidden_size]
+            # _decoder_hidden:  [n_layer, 1, hidden_size]
             _decoder_input = torch.LongTensor([sos_idx]).cuda()
             _encoder_outputs = encoder_outputs[:, batch_idx, :].unsqueeze(1)
-            _decoder_hidden  = decoder_hidden[batch_idx, :].unsqueeze(0)
+            _decoder_hidden  = decoder_hidden[:, batch_idx].unsqueeze(1)
 
             root = Node(hidden=_decoder_hidden, previous_node=None, decoder_input=_decoder_input, log_prob=torch.FloatTensor([1]), length=1)
             q = Queue()
@@ -150,8 +150,7 @@ class Beam_Search(nn.Module):
                     # decoder_hidden: [1, hidden_size]
                     _decoder_output, _decoder_hidden = self.decoder(_decoder_input.contiguous(), _hidden.contiguous(), _encoder_outputs.contiguous())
 
-                    softmax = nn.Softmax()
-                    decoder_score = softmax(_decoder_output)
+                    decoder_score = F.softmax(_decoder_output, dim=1)
                     values, indices = decoder_score.squeeze(0).topk(beam_size)
 
                     for i in range(beam_size):
