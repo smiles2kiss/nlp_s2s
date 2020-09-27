@@ -29,8 +29,8 @@ class Decoder(nn.Module):
         self.tgt_emb = nn.Embedding(n_trg_vocab, d_word_vec, padding_idx=pad_idx)
         # self.pos_emb = PositionalEncoding(d_word_vec, n_position=n_position)
         self.pos_emb = nn.Embedding(max_seq_len, d_word_vec)
-        self.dropout = nn.Dropout(p=dropout)
 
+        self.dropout = nn.Dropout(p=dropout)
         self.layer_stack = nn.ModuleList(
             [
                 DecoderLayer(
@@ -46,13 +46,16 @@ class Decoder(nn.Module):
         trg_len    = trg_seq.size(1)
         trg_pos = torch.arange(0, trg_len).unsqueeze(0).repeat(batch_size, 1).cuda()
 
-        # dec_output = self.tgt_emb(trg_seq).cuda() + self.pos_emb(trg_seq).cuda()
+        # src_seq: [batch_size, src_len]
+        # src_pos: [batch_size, src_len]
         emb_word = self.tgt_emb(trg_seq)
         emb_posi = self.pos_emb(trg_pos)
+        # emb_word: [batch_size, src_len, hidden_size]
+        # emb_posi: [batch_size, src_len, hidden_size]
 
         dec_output = emb_word + emb_posi
         dec_output = self.dropout(dec_output)
-        dec_output = self.layer_norm(dec_output)
+        # enc_output: [batch_size, src_len, hidden_size]
 
         for dec_layer in self.layer_stack:
 

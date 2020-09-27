@@ -13,6 +13,7 @@ class PositionwiseFeedForward(nn.Module):
 
     def forward(self, x):
         residual = x
+
         x = self.linear1(x)
         x = F.relu(x)
         x = self.linear2(x)

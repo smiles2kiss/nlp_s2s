@@ -66,16 +66,19 @@ class Transformer(nn.Module):
             if param.dim() > 1:
                 nn.init.xavier_uniform_(param)
 
-    def forward(self, src_seq, src_len, trg_seq, trg_len):
-        # src_mask: [batch_size, 1,       src_len]
-        # trg_mask: [batch_size, trg_len, trg_len]
+    def forward(self, src_seq, trg_seq):
+        # src_seq: [batch_size, src_len]
+        # trg_seq: [batch_size, trg_len]
         src_mask = get_pad_mask(src_seq, self.src_pad_idx)
         trg_mask = get_pad_mask(trg_seq, self.trg_pad_idx) & get_subsequent_mask(trg_seq)
+        # src_mask: [batch_size, 1,       src_len]
+        # trg_mask: [batch_size, trg_len, trg_len]
 
         enc_output, *_ = self.encoder(src_seq=src_seq, src_attn_mask=src_mask)
         dec_output, *_ = self.decoder(trg_seq=trg_seq, trg_attn_mask=trg_mask, enc_output=enc_output, dec_enc_attn_mask=src_mask)
+        # enc_output: [batch_size, src_len, hidden_size]
+        # dec_output: [batch_size, trg_len, hidden_size]
 
-        # dec_output: [batch_size, seq_len, trg_vocab_size]
         seq_logit = self.trg_word_prj(dec_output)
-        seq_logit = seq_logit.view(-1, seq_logit.size(2))
+        # seq_logit: [batch_size, seq_len, trg_vocab_size]
         return seq_logit

@@ -30,6 +30,7 @@ class Encoder(nn.Module):
         self.src_emb = nn.Embedding(n_src_vocab, d_word_vec, padding_idx=pad_idx)
         # self.pos_emb = PositionalEncoding(d_word_vec, n_position=n_position)
         self.pos_emb = nn.Embedding(max_seq_len, d_word_vec)
+
         self.dropout = nn.Dropout(p=dropout)
         self.layer_stack = nn.ModuleList(
             [
@@ -48,13 +49,14 @@ class Encoder(nn.Module):
 
         # src_seq: [batch_size, src_len]
         # src_pos: [batch_size, src_len]
-        # enc_output = self.src_emb(src_seq).cuda() + self.pos_emb(src_seq).cuda()
         emb_word = self.src_emb(src_seq)
         emb_posi = self.pos_emb(src_pos)
+        # emb_word: [batch_size, src_len, hidden_size]
+        # emb_posi: [batch_size, src_len, hidden_size]
 
         enc_output = emb_word + emb_posi
         enc_output = self.dropout(enc_output)
-        enc_output = self.layer_norm(enc_output)
+        # enc_output: [batch_size, src_len, hidden_size]
 
         for enc_layer in self.layer_stack:
             enc_output, enc_slf_attn = enc_layer(enc_input=enc_output, enc_attn_mask=src_attn_mask)

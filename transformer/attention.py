@@ -88,7 +88,7 @@ class MultiHeadAttention(nn.Module):
         # attention: [batch_size, num_head, len_q, len_k]
         context, attention = self.attention(q, k, v, mask)
 
-        # context: [batch_size, len_q, num_head, attn_size]
+        # context: [batch_size, len_q, num_head, d_v]
         context = context.transpose(1, 2).contiguous().view(batch_size, len_q, -1)
         context = self.attn_dropout(context)
 

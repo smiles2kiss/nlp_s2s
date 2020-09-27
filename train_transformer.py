@@ -4,6 +4,7 @@ import json
 import time
 import spacy
 import torch
+import torch.nn as nn
 from torch.optim import Adam
 
 cur_path = os.path.abspath(__file__)
@@ -81,8 +82,7 @@ def train_epoch(model, optimizer, train_iterator, trg_pad_idx, smoothing=False):
     model.train()
     total_loss = 0
     total_step = 0
-    n_word_total = 0
-    n_word_correct = 0
+    loss_fct = nn.CrossEntropyLoss(ignore_index=trg_pad_idx)
     for batch in train_iterator:
         # src_seq: [batch_size, src_len]
         # tgt_seq: [batch_size, tgt_len]
@@ -90,47 +90,63 @@ def train_epoch(model, optimizer, train_iterator, trg_pad_idx, smoothing=False):
         tgt_seq, tgt_len = batch.trg
 
         optimizer.zero_grad()
-        pred = model(src_seq, src_len, tgt_seq, tgt_len)
-        loss, n_correct, n_word = cal_performance(pred, tgt_seq, trg_pad_idx=trg_pad_idx, smoothing=smoothing)
+        pred = model(src_seq.cuda(), tgt_seq[:, :-1].cuda())
+
+        # pred:    [batch_size, trg_len, output_dim]
+        # tgt_seq: [batch_size, trg_len]
+
+        # pred:    [(batch_size*(trg_len-1), output_size]
+        # trg_seq: [(batch_size*(trg_len-1)]
+        output_dim = pred.size(-1)
+        pred    = pred.contiguous().view(-1, output_dim)
+        tgt_seq = tgt_seq[:, 1:].contiguous().view(-1)
+
+        loss = loss_fct(pred, tgt_seq)
         loss.backward()
         optimizer.step()
 
-        n_word_total   += n_word
-        n_word_correct += n_correct
-
-        total_step += 1
         total_loss += loss.item()
+        total_step += 1
 
         if total_step % 100 == 0:
             print("[TIME] --- time: {} --- [TIME], total_step: {}".format(time.ctime(time.time()), total_step))
 
-    loss_per_word = total_loss / n_word_total
-    accuracy = n_word_correct / n_word_total
-    return loss_per_word, accuracy
+    avg_loss = total_loss / total_step
+    avg_accu = 0
+    return avg_loss, avg_accu
 
 
 def eval_epoch(model, valid_iterator, trg_pad_idx, smoothing=False):
     model.eval()
     total_loss = 0
-    n_word_total = 0
-    n_word_correct = 0
+    total_step = 0
+    loss_fct = nn.CrossEntropyLoss(ignore_index=trg_pad_idx)
     for batch in valid_iterator:
         # src_seq: [batch_size, src_len]
         # tgt_seq: [batch_size, tgt_len]
         src_seq, src_len = batch.src
         tgt_seq, tgt_len = batch.trg
+        src_seq = src_seq.cuda()
+        tgt_seq = tgt_seq.cuda()
 
         with torch.no_grad():
-            pred = model(src_seq, src_len, tgt_seq, tgt_len)
-        loss, n_correct, n_word = cal_performance(pred, tgt_seq, trg_pad_idx=trg_pad_idx, smoothing=smoothing)
+            pred = model(src_seq.cuda(), tgt_seq[:, :-1].cuda())
+        # pred:    [batch_size, trg_len, output_dim]
+        # tgt_seq: [batch_size, trg_len]
 
-        n_word_total   += n_word
-        n_word_correct += n_correct
-        total_loss     += loss.item()
+        # pred:    [(batch_size*(trg_len-1), output_dim]
+        # tgt_seq: [(batch_size*(trg_len-1)]
+        output_dim = pred.size(-1)
+        pred    = pred.contiguous().view(-1, output_dim)
+        tgt_seq = tgt_seq[:, 1:].contiguous().view(-1)
 
-    loss_per_word = total_loss / n_word_total
-    accuracy  = n_word_correct / n_word_total
-    return loss_per_word, accuracy
+        loss = loss_fct(pred, tgt_seq)
+        total_loss += loss.item()
+        total_step += 1
+
+    avg_loss = total_loss / total_step
+    avg_accu = 0
+    return avg_loss, avg_accu
 
 
 def do_train():

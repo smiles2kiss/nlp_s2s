@@ -25,6 +25,6 @@ class EncoderLayer(nn.Module):
         # enc_output:   [batch_size, src_len, hidden_size]
         # enc_slf_attn: [batch_size, num_head, src_len, src_len]
 
-        # enc_output: [batch_size, src_len, hidden_size]
         enc_output = self.pos_ffn(enc_output)
+        # enc_output: [batch_size, src_len, hidden_size]
         return enc_output, enc_slf_attn

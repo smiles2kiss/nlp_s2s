@@ -90,16 +90,14 @@ def train_epoch(model, optimizer, train_iterator, trg_pad_idx, smoothing=False):
         tgt_seq, tgt_len = batch.trg
         src_seq = src_seq.cuda()
         tgt_seq = tgt_seq.cuda()
-        assert src_seq.size(0) == tgt_seq.size(0)
 
         optimizer.zero_grad()
         # output: [batch_size, trg_len, output_dim]
         output, _ = model(src_seq, tgt_seq[:, :-1])
 
-        output_dim = output.size(-1)
-
         # output:  [(batch_size*(trg_len-1), output_dim]
         # tgt_seq: [(batch_size*(trg_len-1)]
+        output_dim = output.size(-1)
         output = output.contiguous().view(-1, output_dim)
         tgt_seq = tgt_seq[:, 1:].contiguous().view(-1)
 
@@ -132,10 +130,9 @@ def eval_epoch(model, valid_iterator, trg_pad_idx, smoothing=False):
         with torch.no_grad():
             output, _ = model(src_seq, tgt_seq[:, :-1])
 
-        output_dim = output.size(-1)
-
         # output:  [(batch_size*(trg_len-1)), output_dim]
         # tgt_seq: [(batch_size*(trg_len-1))]
+        output_dim = output.size(-1)
         output = output.contiguous().view(-1, output_dim)
         tgt_seq = tgt_seq[:, 1:].contiguous().view(-1)
 
@@ -243,5 +240,5 @@ def do_predict():
 
 
 if __name__ == "__main__":
-    # do_train()
+    do_train()
     do_predict()
