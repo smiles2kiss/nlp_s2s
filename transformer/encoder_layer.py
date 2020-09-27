@@ -19,6 +19,12 @@ class EncoderLayer(nn.Module):
         self.pos_ffn  = PositionwiseFeedForward(d_input=d_model, d_hidden=d_inner, dropout=dropout)
 
     def forward(self, enc_input, enc_attn_mask=None):
+        # enc_input:     [batch_size, src_len]
+        # enc_attn_mask: [batch_size, src_len, src_len]
         enc_output, enc_slf_attn = self.slf_attn(q=enc_input, k=enc_input, v=enc_input, mask=enc_attn_mask)
+        # enc_output:   [batch_size, src_len, hidden_size]
+        # enc_slf_attn: [batch_size, num_head, src_len, src_len]
+
+        # enc_output: [batch_size, src_len, hidden_size]
         enc_output = self.pos_ffn(enc_output)
         return enc_output, enc_slf_attn

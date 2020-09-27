@@ -67,8 +67,11 @@ class Transformer(nn.Module):
                 nn.init.xavier_uniform_(param)
 
     def forward(self, src_seq, src_len, trg_seq, trg_len):
+        # src_mask: [batch_size, 1,       src_len]
+        # trg_mask: [batch_size, trg_len, trg_len]
         src_mask = get_pad_mask(src_seq, self.src_pad_idx)
         trg_mask = get_pad_mask(trg_seq, self.trg_pad_idx) & get_subsequent_mask(trg_seq)
+
         enc_output, *_ = self.encoder(src_seq=src_seq, src_attn_mask=src_mask)
         dec_output, *_ = self.decoder(trg_seq=trg_seq, trg_attn_mask=trg_mask, enc_output=enc_output, dec_enc_attn_mask=src_mask)
 

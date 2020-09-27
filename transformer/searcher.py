@@ -69,16 +69,18 @@ def translate_tokens(input_ids, src_field, trg_field, model, max_len=32):
     src_mask   = get_pad_mask(src_tensor, src_pad_idx)
 
     with torch.no_grad():
-        enc_output, *_ = model.encoder(src_seq=src_tensor, src_pad_mask=src_pad_mask, src_attn_mask=src_attn_mask)
+        enc_output, *_ = model.encoder(src_seq=src_tensor, src_attn_mask=src_mask)
 
     trg_indexes = [trg_field.vocab.stoi[trg_field.init_token]]
     for i in range(max_len):
         # trg_tensor: [1, trg_len]
         # trg_len:    [1]
         trg_tensor = torch.LongTensor(trg_indexes).unsqueeze(0).cuda()
-        trg_len = torch.LongTensor([len(trg_indexes)]).cuda()
+        trg_len    = torch.LongTensor([len(trg_indexes)]).cuda()
         trg_mask   = get_pad_mask(trg_tensor, trg_pad_idx) & get_subsequent_mask(trg_tensor)
 
+        # src_mask: [batch_size, 1,       src_len]
+        # trg_mask: [batch_size, trg_len, trg_len]
         with torch.no_grad():
             dec_output, *_ = model.decoder(trg_seq=trg_tensor, trg_attn_mask=trg_mask,
                                            enc_output=enc_output, dec_enc_attn_mask=src_mask)

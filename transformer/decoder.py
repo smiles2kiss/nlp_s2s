@@ -55,6 +55,7 @@ class Decoder(nn.Module):
         dec_output = self.layer_norm(dec_output)
 
         for dec_layer in self.layer_stack:
+
             dec_output, dec_slf_attn, dec_enc_attn = dec_layer(
                 dec_input=dec_output, enc_output=enc_output, dec_attn_mask=trg_attn_mask, dec_enc_attn_mask=dec_enc_attn_mask
             )

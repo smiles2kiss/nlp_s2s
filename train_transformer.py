@@ -189,7 +189,7 @@ def do_predict():
                         trg_pad_idx=tgt_pad_idx,
                         d_word_vec=256,
                         d_model=256,
-                        d_inner=256,
+                        d_inner=512,
                         n_layer=3,
                         n_head=8,
                         dropout=0.1,
@@ -205,6 +205,7 @@ def do_predict():
     pre_sents = []
     gth_sents = []
     for idx, batch in enumerate(test_iterator):
+        if idx % 10 == 0: print("[TIME] --- time: {} --- [TIME]".format(time.ctime(time.time())))
         # src_seq: [seq_len, batch_size]
         # tgt_seq: [seq_len, batch_size]
         src_seq, src_len = batch.src

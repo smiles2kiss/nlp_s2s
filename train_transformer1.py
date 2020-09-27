@@ -212,6 +212,7 @@ def do_predict():
     pre_sents = []
     gth_sents = []
     for idx, batch in enumerate(test_iterator):
+        if idx % 10 == 0: print("[TIME] --- time: {} --- [TIME]".format(time.ctime(time.time())))
         # src_seq: [batch_size, src_len]
         # tgt_seq: [batch_size, tgt_len]
         src_seq, src_len = batch.src
@@ -242,5 +243,5 @@ def do_predict():
 
 
 if __name__ == "__main__":
-    do_train()
+    # do_train()
     do_predict()
