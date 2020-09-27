@@ -43,9 +43,6 @@ class DecoderLayer(nn.Module):
 
         # _trg:      [batch_size, trg_len, hid_dim]
         # attention: [batch_size, n_head, trg_len, src_len]
-        if trg.size(0) != enc_src.size(0):
-            print("trg size = ", trg.size())
-            print("enc_src size = ", enc_src.size())
         _trg, attention = self.encoder_attention(query=trg, key=enc_src, value=enc_src, mask=src_mask)
 
         # trg: [batch_size, trg_len, hid_dim]

@@ -17,8 +17,8 @@ class PositionwiseFeedForward(nn.Module):
         x = self.linear1(x)
         x = F.relu(x)
         x = self.linear2(x)
-
         x = self.dropout(x)
+
         x = x + residual
         x = self.layer_norm(x)
 

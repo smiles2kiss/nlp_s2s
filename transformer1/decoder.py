@@ -25,15 +25,15 @@ class Decoder(nn.Module):
         self.tok_embedding = nn.Embedding(output_dim, hid_dim)
         self.pos_embedding = nn.Embedding(max_length, hid_dim)
 
-        self.layers = nn.ModuleList([DecoderLayer(hid_dim=hid_dim,
-                                                  n_head=n_head,
-                                                  pf_dim=pf_dim,
-                                                  dropout=dropout)
-                                     for _ in range(n_layer)])
+        self.layers = nn.ModuleList(
+            [
+                DecoderLayer(hid_dim=hid_dim, n_head=n_head, pf_dim=pf_dim, dropout=dropout)
+                for _ in range(n_layer)
+            ])
 
-        self.fc_out = nn.Linear(hid_dim, output_dim)
+        self.fc_out  = nn.Linear(hid_dim, output_dim)
         self.dropout = nn.Dropout(dropout)
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim])).cuda()
+        self.scale   = torch.sqrt(torch.FloatTensor([hid_dim])).cuda()
 
     def forward(self, trg, enc_src, trg_mask, src_mask):
         # trg:      [batch_size, trg_len]
